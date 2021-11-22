@@ -7,10 +7,11 @@
 * Multiple Metamask wallets with sufficient BNB for BSC transaction fee and RACA balance to purchase NFT
 
 ### Security requirement ###
-* Secure the 12 words of metamask. Can use AWS KMS for encryption. However, Local encryption can be used
+* Secure the 12 words of metamask secret. The AWS KMS for encryption can be used. However, Local encryption can be used
 
 ### Improvements ###
-
+* Reduce the loading time and configure metamask wallet
+* Track and visualise the fluctuation price of NFT items
 
 # Diagram
 
