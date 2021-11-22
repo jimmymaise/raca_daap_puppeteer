@@ -1,7 +1,8 @@
 {
-  "name": "dappeteer",
+  "name": "dapp_raca",
   "version": "1.0.0",
   "dependencies": {
+    "@chainsafe/dappeteer": "^2.2.0",
     "puppeteer": "^11.0.0"
   },
   "devDependencies": {
