@@ -2,10 +2,17 @@ import * as puppeteer from 'puppeteer';
 import * as dappeteer from '@chainsafe/dappeteer';
 
 async function bringToFrontCallback() {
-    let parentObject = this
-    await parentObject.bringToFront()
+    let page = this
+    await page.bringToFront()
+    await page.waitForTimeout(2000);
 }
 
+async function waitUntilElementExist(page, xpath, retryCallback) {
+    while ((await page.$x(xpath)) [0] == undefined) {
+        await retryCallback()
+    }
+
+}
 
 async function tryClick(ele, retryCallback = undefined, attempts = 3, waitTime = 3000, clickOptions = {}) {
     if (!ele) {
@@ -28,6 +35,7 @@ async function tryClick(ele, retryCallback = undefined, attempts = 3, waitTime =
             if (retryCallback != undefined) {
                 await retryCallback()
             }
+
             attempts--;
             retry++;
         }
@@ -66,11 +74,7 @@ async function main() {
     await page.goto('https://market.radiocaca.com/#/market-place/5490');
 
     const buyNowXpath = "//button/span[text()='Buy Now']"
-    while ((await page.$x(buyNowXpath)) [0] == undefined) {
-        await page.waitForTimeout(1000);
-        console.log('Change to page')
-        await page.bringToFront()
-    }
+    await waitUntilElementExist(page, buyNowXpath, bringToFrontCallback.bind(page))
     let buyNowButton = (await page.$x(buyNowXpath))[0];
     await tryClick(buyNowButton, page.bringToFront);
 
@@ -85,11 +89,9 @@ async function main() {
         await metamask.confirmTransaction()
         console.log('Confirm successfully')
 
-        await page.bringToFront()
-        //Check until approve Raca loading button disappear
-        await page.waitForXPath("//button[contains(@class,'ant-btn-loading')]/span[text()='Approve Raca']",
-            {hidden: true});
-        newBuyNowButton = await page.$x(newBuyNowXpath)[0]
+        //Check until approve Buy now Enable
+        await waitUntilElementExist(page, newBuyNowXpath, bringToFrontCallback.bind(page))
+        newBuyNowButton = (await page.$x(newBuyNowXpath))[0]
 
     }
     console.log('Try to click Buy Now')
