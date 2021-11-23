@@ -28,6 +28,7 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
         await redisClient.setex(profilePath, 240, true)
         bot = new Bot(itemUrl, profilePath, password, seed)
         await bot.build()
+
         await withTimeout(botTimeOut, bot.executeBot());
 
     } catch (error) {
@@ -37,16 +38,20 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
 
         }
         console.log(`Error: ${error}`)
-        return res.status(422).send({
+        return await res.status(422).send({
             'success': false,
-            'reason': error
+            'reason': error.message,
+            'last_step': bot.executeLastStep
         });
 
     } finally {
         await redisClient.set('profilePath', false)
 
     }
-    return res.send({'success': true});
+    return res.send({
+        'success': true,
+        'last_step': bot.executeLastStep
+    });
 
 });
 

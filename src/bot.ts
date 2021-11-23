@@ -4,13 +4,18 @@ import {redisClient} from "./redis";
 
 const fs = require('fs');
 
+async function getTextFromElementXpath(page, xpath) {
+    const element = (await page.$x(xpath))[0];
+    return await page.evaluate(el => el.textContent, element);
+}
+
 async function bringToFrontCallback() {
     let page = this
     await page.bringToFront()
     await page.waitForTimeout(2000);
 }
 
-async function waitUntilElementExist(page, xpath, retryCallback) {
+async function waitUntilElementExist(page: puppeteer.Page, xpath: string, retryCallback) {
     while ((await page.$x(xpath)) [0] == undefined) {
         await retryCallback()
     }
@@ -51,6 +56,7 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
 class Bot {
     browser: puppeteer.Browser;
     itemUrl: string;
@@ -58,7 +64,7 @@ class Bot {
     seed: string;
     profile: string
     isAddedNetwork: boolean
-    run: any
+    executeLastStep: null
 
     //constructor
     constructor(itemUrl, profile, password, seed) {
@@ -76,6 +82,11 @@ class Bot {
 
         });
         return this
+    }
+
+    setLastStep(message) {
+        this.executeLastStep = message
+        console.log(message)
     }
 
     async executeBot() {
@@ -111,7 +122,7 @@ class Bot {
                 explorer: "https://bscscan.com"
             })
             await metamask.switchNetwork('Smart Chain');
-            console.log('Add network success')
+            this.setLastStep('Add network success')
             page = await browser.newPage();
             await page.goto('https://market.radiocaca.com/#/market-place');
             // you can change the network if you want
@@ -120,7 +131,7 @@ class Bot {
             const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
             await tryClick(metamaskButton);
             await metamask.approve()
-            console.log('Connect approve sucess')
+            this.setLastStep('Connect approve sucess')
 
 
         }
@@ -134,25 +145,44 @@ class Bot {
         await tryClick(buyNowButton, page.bringToFront);
 
 
-        const newBuyNowXpath = "//div[@class='ant-modal-body']/div/button" +
-            "[not(contains(@class,'disabled-btn'))]/span[text()='Buy Now']"
-        let newBuyNowButton = await page.$x(newBuyNowXpath)[0]
+        const newBuyNowXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Buy Now']/.."
+        let newBuyNowButton = (await page.$x(newBuyNowXpath))[0]
         //Check if we have BuyNowButton (Not disable), If not try to approve
         if (!newBuyNowButton) {
-            const approveRacaButton = (await page.$x("//button/span[text()='Approve Raca']/.."))[0]
+            const approveRacaButton = (await page.$x("//button[not(contains(@class,'disabled-btn'))]/span[text()='Approve Raca']/.."))[0]
             await tryClick(approveRacaButton, bringToFrontCallback.bind(page))
+            this.setLastStep('Clicked approve raca button')
             await metamask.confirmTransaction()
-            console.log('Confirm successfully')
+            this.setLastStep('Confirm successfully')
 
             //Check until approve Buy now Enable
             await waitUntilElementExist(page, newBuyNowXpath, bringToFrontCallback.bind(page))
             newBuyNowButton = (await page.$x(newBuyNowXpath))[0]
 
         }
-        console.log('Try to click Buy Now')
+
+        this.setLastStep('Try to click Buy Now')
 
         await tryClick(newBuyNowButton, bringToFrontCallback.bind(page))
+        this.setLastStep('clicked Buy Now')
 
+        const confirmButtonXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Confirm']"
+
+        this.setLastStep('Try to click confirmButton')
+        await waitUntilElementExist(page, confirmButtonXpath, bringToFrontCallback.bind(page))
+        const confirmButton = (await page.$x(confirmButtonXpath))[0]
+        await tryClick(confirmButton, bringToFrontCallback.bind(page))
+        this.setLastStep('Clicked confirm')
+        const noticeMessageXpath = "//div[@class='ant-notification-notice-message']"
+        const messageDescXpath = "//div[@class='ant-notification-notice-description']"
+        await page.waitForXPath(noticeMessageXpath)
+        const message = await getTextFromElementXpath(page, noticeMessageXpath)
+        const messageDesc = await getTextFromElementXpath(page, messageDescXpath)
+
+        console.log(message)
+        if (message == 'Failed') {
+            throw Error(`Failed as ${messageDesc}`)
+        }
         await sleep(4000);
         await browser.close()
         return true
