@@ -11,7 +11,6 @@ app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
 
 app.post('/raca/buy/:itemId', async (req, res, next) => {
-    console.log('come here')
     const itemUrl = `https://market.radiocaca.com/#/market-place/${req.params.itemId}`;
     const profilePath = req.body.profilePath;
     const password = req.body.password;
@@ -47,7 +46,6 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
         await redisClient.set('profilePath', false)
 
     }
-    console.log('Request type: ', req.method);
     return res.send({'success': true});
 
 });

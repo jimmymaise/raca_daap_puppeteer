@@ -81,10 +81,8 @@ class Bot {
     async executeBot() {
         const META_PASSWORD = this.password
         const META_SEED = this.seed
-        const USER_PROFILE = this.profile
         const ITEM_URL = this.itemUrl
 
-        const isAddedNetwork = fs.existsSync(USER_PROFILE)
         const browser = this.browser
         let metamask;
         let page;
