@@ -12,23 +12,22 @@ app.use(bodyParser.urlencoded({extended: true})); // for parsing application/x-w
 
 app.post('/raca/buy/:itemId', async (req, res, next) => {
     const itemUrl = `https://market.radiocaca.com/#/market-place/${req.params.itemId}`;
-    const profilePath = req.body.profilePath;
+    const profilePath: string = req.body.profilePath;
     const password = req.body.password;
     const botTimeOut = req.body.botTimeOut || DEFAULT_BOT_TIMEOUT_MS;
     let bot: Bot
     const seed = req.body.seed;
     let isRunning = await redisClient.get(profilePath)
-    if (isRunning) {
+    if (isRunning == 'true') {
         return res.status(422).send({
             'success': false,
             'reason': 'bot with this profile is running'
         });
     }
     try {
-        await redisClient.setex(profilePath, 240, true)
         bot = new Bot(itemUrl, profilePath, password, seed)
         await bot.build()
-
+        await redisClient.setex(profilePath, botTimeOut / 1000, true)
         await withTimeout(botTimeOut, bot.executeBot());
 
     } catch (error) {
@@ -45,7 +44,7 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
         });
 
     } finally {
-        await redisClient.set('profilePath', false)
+        await redisClient.del(profilePath)
 
     }
     return res.send({
