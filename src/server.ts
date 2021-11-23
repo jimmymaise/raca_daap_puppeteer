@@ -40,7 +40,8 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
         return await res.status(422).send({
             'success': false,
             'reason': error.message,
-            'last_step': bot.executeLastStep
+            'executed_steps': bot.executedSteps,
+            'last_step': bot.executedSteps[bot.executedSteps.length-1]
         });
 
     } finally {
@@ -49,7 +50,8 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
     }
     return res.send({
         'success': true,
-        'last_step': bot.executeLastStep
+        'executed_steps': bot.executedSteps,
+        'last_step': bot.executedSteps[bot.executedSteps.length-1]
     });
 
 });

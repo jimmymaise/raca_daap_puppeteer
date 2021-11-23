@@ -64,7 +64,7 @@ class Bot {
     seed: string;
     profile: string
     isAddedNetwork: boolean
-    executeLastStep: null
+    executedSteps = []
 
     //constructor
     constructor(itemUrl, profile, password, seed) {
@@ -85,7 +85,7 @@ class Bot {
     }
 
     setLastStep(message) {
-        this.executeLastStep = message
+        this.executedSteps.push(message)
         console.log(message)
     }
 
@@ -131,7 +131,9 @@ class Bot {
             const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
             await tryClick(metamaskButton);
             await metamask.approve()
-            this.setLastStep('Connect approve sucess')
+
+
+            this.setLastStep('Connect approve success')
 
 
         }
@@ -153,8 +155,14 @@ class Bot {
             await tryClick(approveRacaButton, bringToFrontCallback.bind(page))
             this.setLastStep('Clicked approve raca button')
             await metamask.confirmTransaction()
+            //Bug in the library, temporary fix buy click confirm again
+            const metamaskPage = metamask.page
+            const approveTransactionXpath = "//footer/button[text()='Confirm']"
+            const approveTransactionButton = (await metamaskPage.$x(approveTransactionXpath))[0];
+            await sleep(1000);
+            this.setLastStep('Try to click confirm again as a bug in library')
+            await tryClick(approveTransactionButton)
             this.setLastStep('Confirm successfully')
-
             //Check until approve Buy now Enable
             await waitUntilElementExist(page, newBuyNowXpath, bringToFrontCallback.bind(page))
             newBuyNowButton = (await page.$x(newBuyNowXpath))[0]
