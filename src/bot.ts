@@ -187,7 +187,7 @@ class Bot {
         const message = await getTextFromElementXpath(page, noticeMessageXpath)
         const messageDesc = await getTextFromElementXpath(page, messageDescXpath)
 
-        console.log(message)
+        this.setLastStep(`Get notice message ${message}:${messageDesc}`)
         if (message == 'Failed') {
             throw Error(`Failed as ${messageDesc}`)
         }
