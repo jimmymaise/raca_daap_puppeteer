@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@chainsafe/dappeteer": "^2.2.0",
+    "express": "^4.17.1",
     "puppeteer": "^11.0.0"
   },
   "devDependencies": {
