@@ -51,15 +51,15 @@ function sleep(ms) {
 }
 
 async function main() {
-    const PASSWORD = 'duyetmt@123'
-    const SEED = 'car assault orange moral hobby audit repair reduce tuition fuel duck defy'
-    const BROWSER_CACHE = '/tmp/myChromeSession112345'
+    const META_PASSWORD = 'duyetmt@123'
+    const META_SEED = 'car assault orange moral hobby audit repair reduce tuition fuel duck defy'
+    const USER_PROFILE = '/tmp/myChromeSession112345'
     const ITEM_URL = 'https://market.radiocaca.com/#/market-place/5490'
 
-    const isAddedNetwork = fs.existsSync(BROWSER_CACHE)
+    const isAddedNetwork = fs.existsSync(USER_PROFILE)
     const browser = await dappeteer.launch(puppeteer, {
         metamaskVersion: 'v10.1.1',
-        userDataDir: BROWSER_CACHE
+        userDataDir: USER_PROFILE
 
     });
     let metamask;
@@ -73,13 +73,13 @@ async function main() {
         await pages[1].evaluate((s) => {
             window['signedIn'] = s;
         }, false)
-        await metamask.unlock(PASSWORD)
+        await metamask.unlock(META_PASSWORD)
         page = await browser.newPage();
         await page.goto('https://market.radiocaca.com/#/market-place');
     } else {
         metamask = await dappeteer.setupMetamask(browser, {
-            seed: SEED,
-            password: PASSWORD
+            seed: META_SEED,
+            password: META_PASSWORD
         });
         await metamask.addNetwork({
             networkName: "Smart Chain",
