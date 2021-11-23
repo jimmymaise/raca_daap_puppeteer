@@ -1,6 +1,8 @@
 import * as puppeteer from 'puppeteer';
 import * as dappeteer from '@chainsafe/dappeteer';
 
+const fs = require('fs');
+
 async function bringToFrontCallback() {
     let page = this
     await page.bringToFront()
@@ -44,34 +46,65 @@ async function tryClick(ele, retryCallback = undefined, attempts = 3, waitTime =
 
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function main() {
+    const PASSWORD = 'duyetmt@123'
+    const SEED = 'car assault orange moral hobby audit repair reduce tuition fuel duck defy'
+    const BROWSER_CACHE = '/tmp/myChromeSession112345'
+    const ITEM_URL = 'https://market.radiocaca.com/#/market-place/5490'
+
+    const isAddedNetwork = fs.existsSync(BROWSER_CACHE)
     const browser = await dappeteer.launch(puppeteer, {
         metamaskVersion: 'v10.1.1',
+        userDataDir: BROWSER_CACHE
 
     });
-    const metamask = await dappeteer.setupMetamask(browser, {
-        seed: "car assault orange moral hobby audit repair reduce tuition fuel duck defy"
-    });
+    let metamask;
+    let page;
 
-    await metamask.addNetwork({
-        networkName: "Smart Chain",
-        rpc: "https://bsc-dataseed.binance.org/",
-        chainId: 56,
-        symbol: "BNB",
-        explorer: "https://bscscan.com"
-    })
-    // you can change the network if you want
-    await metamask.switchNetwork('Smart Chain');
+    if (isAddedNetwork) {
+        //Wait for meta mask windows display
+        await sleep(4000);
+        metamask = await dappeteer.getMetamaskWindow(browser);
+        let pages = await browser.pages()
+        await pages[1].evaluate((s) => {
+            window['signedIn'] = s;
+        }, false)
+        await metamask.unlock(PASSWORD)
+        page = await browser.newPage();
+        await page.goto('https://market.radiocaca.com/#/market-place');
+    } else {
+        metamask = await dappeteer.setupMetamask(browser, {
+            seed: SEED,
+            password: PASSWORD
+        });
+        await metamask.addNetwork({
+            networkName: "Smart Chain",
+            rpc: "https://bsc-dataseed.binance.org/",
+            chainId: 56,
+            symbol: "BNB",
+            explorer: "https://bscscan.com"
+        })
+        await metamask.switchNetwork('Smart Chain');
+        console.log('Add network success')
+        page = await browser.newPage();
+        await page.goto('https://market.radiocaca.com/#/market-place');
+        // you can change the network if you want
+        const connectWalletButton = (await page.$x('//*[contains(@class,"connect-btn")]'))[0];
+        await tryClick(connectWalletButton, bringToFrontCallback.bind(page));
+        const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
+        await tryClick(metamaskButton);
+        await metamask.approve()
+        console.log('Connect approve sucess')
+
+
+    }
 
     // go to a dapp and do something that prompts MetaMask to confirm a transaction
-    const page = await browser.newPage();
-    await page.goto('https://market.radiocaca.com/#/market-place');
-    const connectWalletButton = (await page.$x('//*[contains(@class,"connect-btn")]'))[0];
-    await tryClick(connectWalletButton, bringToFrontCallback.bind(page));
-    const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
-    await tryClick(metamaskButton);
-    await metamask.approve()
-    await page.goto('https://market.radiocaca.com/#/market-place/5490');
+    await page.goto(ITEM_URL);
 
     const buyNowXpath = "//button/span[text()='Buy Now']"
     await waitUntilElementExist(page, buyNowXpath, bringToFrontCallback.bind(page))
@@ -97,6 +130,9 @@ async function main() {
     console.log('Try to click Buy Now')
 
     await tryClick(newBuyNowButton, bringToFrontCallback.bind(page))
+
+    await sleep(4000);
+    await browser.close()
 
 
 }
