@@ -27,7 +27,7 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
     try {
         bot = new Bot(itemUrl, profilePath, password, seed)
         await bot.build()
-        await redisClient.setex(profilePath, botTimeOut / 1000, true)
+        await redisClient.setex(profilePath, botTimeOut / 1000, "true")
         await withTimeout(botTimeOut, bot.executeBot());
 
     } catch (error) {
