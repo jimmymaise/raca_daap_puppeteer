@@ -88,7 +88,7 @@ class Bot {
         } catch {
             this.setLastStep('No error message after clicking confirm')
         }
-        if (message) {
+        if (message == 'Failed') {
             throw Error(`Failed as ${message}:${messageDesc}`)
         }
 
@@ -203,7 +203,7 @@ class Bot {
 
         this.setLastStep('Try to click Buy Now')
         await sleep(1000)
-        await tryClick(newBuyNowButton, bringToFrontCallback.bind(page))
+        await tryClick(page, newBuyNowButton, bringToFrontCallback.bind(page))
         this.setLastStep('clicked Buy Now')
 
         const confirmButtonXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Confirm']/.."
@@ -211,7 +211,7 @@ class Bot {
         this.setLastStep('Try to click confirm Button')
         await waitUntilElementExist(page, confirmButtonXpath, bringToFrontCallback.bind(page))
         const confirmButton = (await page.$x(confirmButtonXpath))[0]
-        await tryClick(confirmButton, bringToFrontCallback.bind(page))
+        await tryClick(page, confirmButton, bringToFrontCallback.bind(page))
         this.setLastStep('Clicked confirm')
 
 
