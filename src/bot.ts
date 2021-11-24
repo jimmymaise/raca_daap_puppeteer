@@ -99,12 +99,12 @@ class Bot {
 
         await this.metamask.confirmTransaction()
         //Bug in the library, temporary fix buy click confirm again
-        const saveSelector = '.btn-primary';
-        const save = this.metamask.page.waitForSelector(saveSelector);
         const metamaskPage = this.metamask.page
-        const approveTransactionXpath = "//footer/button[text()='Confirm'][not(contains(@class,'disabled-btn'))]"
+        await metamaskPage.waitForXPath("//footer/button[text()='Confirm'][not(@disabled)]")
+
+        const approveTransactionXpath = "//footer/button[text()='Confirm'][not(@disabled)]"
         const approveTransactionButton = (await metamaskPage.$x(approveTransactionXpath))[0];
-        await sleep(1000);
+        // await sleep(1000);
         this.setLastStep('Try to click confirm again as a bug in library')
         await tryClick(metamaskPage, approveTransactionButton)
     }
@@ -202,7 +202,7 @@ class Bot {
         }
 
         this.setLastStep('Try to click Buy Now')
-
+        await sleep(1000)
         await tryClick(newBuyNowButton, bringToFrontCallback.bind(page))
         this.setLastStep('clicked Buy Now')
 
