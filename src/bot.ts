@@ -88,7 +88,7 @@ class Bot {
         } catch {
             this.setLastStep('No error message after clicking confirm')
         }
-        if (message == 'Failed') {
+        if (message == 'Failed' || message == 'NetWork Error') {
             throw Error(`Failed as ${message}:${messageDesc}`)
         }
 
@@ -167,6 +167,8 @@ class Bot {
         let text = await getTextFromElementXpath(page, "//span[contains(@class,'accountInfo')]//text()")
         const isNeedConnectWallet = (text == 'Connect Wallet')
         if (isNeedConnectWallet) {
+            this.setLastStep('Try to connect wallet')
+
             const connectWalletButton = (await page.$x('//*[contains(@class,"connect-btn")]'))[0];
             await tryClick(page, connectWalletButton, bringToFrontCallback.bind(page));
             const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
@@ -184,12 +186,14 @@ class Bot {
         let buyNowButton = (await page.$x(buyNowXpath))[0];
         await tryClick(page, buyNowButton, bringToFrontCallback.bind(page));
 
-
+        await page.waitForXPath("//div[@class='ant-modal-body']/div/button/span[text()='Buy Now']/..")
         const newBuyNowXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Buy Now']/.."
         let newBuyNowButton = (await page.$x(newBuyNowXpath))[0]
         //Check if we have BuyNowButton (Not disable), If not try to approve
         if (!newBuyNowButton) {
-            const approveRacaButton = (await page.$x("//button[not(contains(@class,'disabled-btn'))]/span[text()='Approve Raca']/.."))[0]
+            const approveRacaXpath = "//button[not(contains(@class,'disabled-btn'))]/span[text()='Approve Raca']/.."
+            await page.waitForXPath(approveRacaXpath)
+            const approveRacaButton = (await page.$x(approveRacaXpath))[0]
             await tryClick(page, approveRacaButton, bringToFrontCallback.bind(page))
             this.setLastStep('Clicked approve raca button')
             await this.metaMaskConfirm()
