@@ -63,7 +63,7 @@ class Bot {
     password: string;
     seed: string;
     profile: string
-    isAddedNetwork: boolean
+    isExistProfile: boolean
     executedSteps = []
     metamask;
 
@@ -110,7 +110,7 @@ class Bot {
     }
 
     async build() {
-        this.isAddedNetwork = fs.existsSync(this.profile)
+        this.isExistProfile= fs.existsSync(this.profile)
         this.browser = await dappeteer.launch(puppeteer, {
             metamaskVersion: 'v10.1.1',
             userDataDir: this.profile,
@@ -135,7 +135,7 @@ class Bot {
         let metamask;
         let page;
 
-        if (this.isAddedNetwork) {
+        if (this.isExistProfile) {
             //Wait for meta mask windows display
             await sleep(4000);
             metamask = await dappeteer.getMetamaskWindow(browser);
@@ -145,8 +145,6 @@ class Bot {
                 window['signedIn'] = s;
             }, false)
             await metamask.unlock(META_PASSWORD)
-            page = await browser.newPage();
-            await page.goto('https://market.radiocaca.com/#/market-place');
         } else {
             metamask = await dappeteer.setupMetamask(browser, {
                 seed: META_SEED,
@@ -162,19 +160,21 @@ class Bot {
             })
             await metamask.switchNetwork('Smart Chain');
             this.setLastStep('Add network success')
-            page = await browser.newPage();
-            await page.goto('https://market.radiocaca.com/#/market-place');
-            // you can change the network if you want
+
+        }
+        page = await browser.newPage();
+        await page.goto('https://market.radiocaca.com/#/market-place');
+        let text = await getTextFromElementXpath(page, "//span[contains(@class,'accountInfo')]//text()")
+        const isNeedConnectWallet = (text == 'Connect Wallet')
+        if (isNeedConnectWallet) {
             const connectWalletButton = (await page.$x('//*[contains(@class,"connect-btn")]'))[0];
             await tryClick(page, connectWalletButton, bringToFrontCallback.bind(page));
             const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
             await tryClick(page, metamaskButton);
             await metamask.approve()
-
-
             this.setLastStep('Connect approve success')
-
         }
+
 
         // go to a dapp and do something that prompts MetaMask to confirm a transaction
         await page.goto(ITEM_URL);
