@@ -14,10 +14,11 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
     const itemUrl = `https://market.radiocaca.com/#/market-place/${req.params.itemId}`;
     const profilePath: string = req.body.profilePath;
     const password = req.body.password;
+    const byPassIsRunning = req.body.byPassIsRunning;
     const botTimeOut = req.body.botTimeOut || DEFAULT_BOT_TIMEOUT_MS;
     let bot: Bot
     const seed = req.body.seed;
-    let isRunning = await redisClient.get(profilePath)
+    let isRunning = byPassIsRunning || await redisClient.get(profilePath)
     if (isRunning == 'true') {
         return res.status(422).send({
             'success': false,
