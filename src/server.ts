@@ -36,12 +36,12 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
             console.log('Force close browser ')
 
         }
-        console.log(`Error: ${error}`)
+        console.error(`Error: ${error}`, error.stack)
         return await res.status(422).send({
             'success': false,
             'reason': error.message,
             'executed_steps': bot.executedSteps,
-            'last_step': bot.executedSteps[bot.executedSteps.length-1]
+            'last_step': bot.executedSteps[bot.executedSteps.length - 1]
         });
 
     } finally {
@@ -51,7 +51,7 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
     return res.send({
         'success': true,
         'executed_steps': bot.executedSteps,
-        'last_step': bot.executedSteps[bot.executedSteps.length-1]
+        'last_step': bot.executedSteps[bot.executedSteps.length - 1]
     });
 
 });

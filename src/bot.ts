@@ -1,6 +1,5 @@
 import * as puppeteer from 'puppeteer';
 import * as dappeteer from '@chainsafe/dappeteer';
-import {redisClient} from "./redis";
 
 const fs = require('fs');
 
@@ -22,7 +21,8 @@ async function waitUntilElementExist(page: puppeteer.Page, xpath: string, retryC
 
 }
 
-async function tryClick(ele, retryCallback = undefined, attempts = 3, waitTime = 3000, clickOptions = {}) {
+
+async function tryClick(page: puppeteer.Page, ele: puppeteer.ElementHandle, retryCallback = undefined, attempts = 3, waitTime = 3000, clickOptions = {}) {
     if (!ele) {
         throw Error(`Element invalid: It is ${ele}`)
     }
@@ -30,7 +30,7 @@ async function tryClick(ele, retryCallback = undefined, attempts = 3, waitTime =
 
     while (true) {
         try {
-            clickOptions ? await ele.click() : await ele.click(clickOptions);
+            await ele.click()
             if (retry > 1) {
                 console.log('Retry success!!!')
             }
@@ -65,6 +65,7 @@ class Bot {
     profile: string
     isAddedNetwork: boolean
     executedSteps = []
+    metamask;
 
     //constructor
     constructor(itemUrl, profile, password, seed) {
@@ -74,12 +75,48 @@ class Bot {
         this.seed = seed
     }
 
+    async getErrorAfterConfirmBuying(page) {
+        let message;
+        let messageDesc;
+        try {
+            const noticeMessageXpath = "//div[@class='ant-notification-notice-message']"
+            const messageDescXpath = "//div[@class='ant-notification-notice-description']"
+            await page.waitForXPath(noticeMessageXpath)
+            message = await getTextFromElementXpath(page, noticeMessageXpath)
+            messageDesc = await getTextFromElementXpath(page, messageDescXpath)
+            this.setLastStep(`Get error notice message ${message}:${messageDesc}`)
+        } catch {
+            this.setLastStep('No error message after clicking confirm')
+        }
+        if (message) {
+            throw Error(`Failed as ${message}:${messageDesc}`)
+        }
+
+    }
+
+
+    async metaMaskConfirm() {
+
+        await this.metamask.confirmTransaction()
+        //Bug in the library, temporary fix buy click confirm again
+        const saveSelector = '.btn-primary';
+        const save = this.metamask.page.waitForSelector(saveSelector);
+        const metamaskPage = this.metamask.page
+        const approveTransactionXpath = "//footer/button[text()='Confirm'][not(contains(@class,'disabled-btn'))]"
+        const approveTransactionButton = (await metamaskPage.$x(approveTransactionXpath))[0];
+        await sleep(1000);
+        this.setLastStep('Try to click confirm again as a bug in library')
+        await tryClick(metamaskPage, approveTransactionButton)
+    }
+
     async build() {
         this.isAddedNetwork = fs.existsSync(this.profile)
         this.browser = await dappeteer.launch(puppeteer, {
             metamaskVersion: 'v10.1.1',
-            userDataDir: this.profile
-
+            userDataDir: this.profile,
+            args: [
+                '--start-maximized' // you can also use '--start-fullscreen'
+            ]
         });
         return this
     }
@@ -102,6 +139,7 @@ class Bot {
             //Wait for meta mask windows display
             await sleep(4000);
             metamask = await dappeteer.getMetamaskWindow(browser);
+            this.metamask = metamask
             let pages = await browser.pages()
             await pages[1].evaluate((s) => {
                 window['signedIn'] = s;
@@ -114,6 +152,7 @@ class Bot {
                 seed: META_SEED,
                 password: META_PASSWORD
             });
+            this.metamask = metamask
             await metamask.addNetwork({
                 networkName: "Smart Chain",
                 rpc: "https://bsc-dataseed.binance.org/",
@@ -127,14 +166,13 @@ class Bot {
             await page.goto('https://market.radiocaca.com/#/market-place');
             // you can change the network if you want
             const connectWalletButton = (await page.$x('//*[contains(@class,"connect-btn")]'))[0];
-            await tryClick(connectWalletButton, bringToFrontCallback.bind(page));
+            await tryClick(page, connectWalletButton, bringToFrontCallback.bind(page));
             const metamaskButton = (await page.$x('//button/img[contains(@alt,"MetaMask")]/..'))[0];
-            await tryClick(metamaskButton);
+            await tryClick(page, metamaskButton);
             await metamask.approve()
 
 
             this.setLastStep('Connect approve success')
-
 
         }
 
@@ -144,7 +182,7 @@ class Bot {
         const buyNowXpath = "//button/span[text()='Buy Now']"
         await waitUntilElementExist(page, buyNowXpath, bringToFrontCallback.bind(page))
         let buyNowButton = (await page.$x(buyNowXpath))[0];
-        await tryClick(buyNowButton, page.bringToFront);
+        await tryClick(page, buyNowButton, bringToFrontCallback.bind(page));
 
 
         const newBuyNowXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Buy Now']/.."
@@ -152,16 +190,10 @@ class Bot {
         //Check if we have BuyNowButton (Not disable), If not try to approve
         if (!newBuyNowButton) {
             const approveRacaButton = (await page.$x("//button[not(contains(@class,'disabled-btn'))]/span[text()='Approve Raca']/.."))[0]
-            await tryClick(approveRacaButton, bringToFrontCallback.bind(page))
+            await tryClick(page, approveRacaButton, bringToFrontCallback.bind(page))
             this.setLastStep('Clicked approve raca button')
-            await metamask.confirmTransaction()
-            //Bug in the library, temporary fix buy click confirm again
-            const metamaskPage = metamask.page
-            const approveTransactionXpath = "//footer/button[text()='Confirm']"
-            const approveTransactionButton = (await metamaskPage.$x(approveTransactionXpath))[0];
-            await sleep(1000);
-            this.setLastStep('Try to click confirm again as a bug in library')
-            await tryClick(approveTransactionButton)
+            await this.metaMaskConfirm()
+
             this.setLastStep('Confirm successfully')
             //Check until approve Buy now Enable
             await waitUntilElementExist(page, newBuyNowXpath, bringToFrontCallback.bind(page))
@@ -174,23 +206,18 @@ class Bot {
         await tryClick(newBuyNowButton, bringToFrontCallback.bind(page))
         this.setLastStep('clicked Buy Now')
 
-        const confirmButtonXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Confirm']"
+        const confirmButtonXpath = "//div[@class='ant-modal-body']/div/button[not(contains(@class,'disabled-btn'))]/span[text()='Confirm']/.."
 
-        this.setLastStep('Try to click confirmButton')
+        this.setLastStep('Try to click confirm Button')
         await waitUntilElementExist(page, confirmButtonXpath, bringToFrontCallback.bind(page))
         const confirmButton = (await page.$x(confirmButtonXpath))[0]
         await tryClick(confirmButton, bringToFrontCallback.bind(page))
         this.setLastStep('Clicked confirm')
-        const noticeMessageXpath = "//div[@class='ant-notification-notice-message']"
-        const messageDescXpath = "//div[@class='ant-notification-notice-description']"
-        await page.waitForXPath(noticeMessageXpath)
-        const message = await getTextFromElementXpath(page, noticeMessageXpath)
-        const messageDesc = await getTextFromElementXpath(page, messageDescXpath)
 
-        this.setLastStep(`Get notice message ${message}:${messageDesc}`)
-        if (message == 'Failed') {
-            throw Error(`Failed as ${messageDesc}`)
-        }
+
+        await Promise.all([this.metaMaskConfirm(),
+            this.getErrorAfterConfirmBuying(page)]);
+
         await sleep(4000);
         await browser.close()
         return true
