@@ -10,15 +10,46 @@ const DEFAULT_BOT_TIMEOUT_MS = 30000
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({extended: true})); // for parsing application/x-www-form-urlencoded
 
+app.delete('/redis', async (req, res, next) => {
+
+    await redisClient.flushall()
+    return await res.status(200).send({
+        'success': 'Delete all redis key'
+    });
+})
+
+app.delete('/raca/profilePathKey', async (req, res, next) => {
+    const profilePath: string = req.body.profilePath;
+    try {
+        await redisClient.del(profilePath)
+        console.log(`Delete key ${profilePath} successfully`)
+        return await res.status(200).send({
+            'success': true,
+            'message': `Delete key ${profilePath} successfully`
+        });
+    } catch (e) {
+        console.error(`Delete key ${profilePath} unsuccessfully`)
+        console.error(e)
+        return await res.status(422).send({
+            'success': false,
+            'message': `Delete key ${profilePath} unsuccessfully`,
+            'error': e.message
+        });
+    }
+
+
+})
+
+
 app.post('/raca/buy/:itemId', async (req, res, next) => {
     const itemUrl = `https://market.radiocaca.com/#/market-place/${req.params.itemId}`;
     const profilePath: string = req.body.profilePath;
     const password = req.body.password;
-    const byPassIsRunning = req.body.byPassIsRunning;
+    const byPassIsRunningCheck = req.body.byPassIsRunningCheck;
     const botTimeOut = req.body.botTimeOut || DEFAULT_BOT_TIMEOUT_MS;
     let bot: Bot
     const seed = req.body.seed;
-    let isRunning = byPassIsRunning || await redisClient.get(profilePath)
+    let isRunning = byPassIsRunningCheck || await redisClient.get(profilePath)
     if (isRunning == 'true') {
         return res.status(422).send({
             'success': false,
@@ -47,9 +78,10 @@ app.post('/raca/buy/:itemId', async (req, res, next) => {
 
     } finally {
         await redisClient.del(profilePath)
+        console.log(`Delete key ${profilePath} successfully`)
 
     }
-    return res.send({
+    return res.status(201).send({
         'success': true,
         'executed_steps': bot.executedSteps,
         'last_step': bot.executedSteps[bot.executedSteps.length - 1]
