@@ -14,9 +14,11 @@ async function bringToFrontCallback() {
     await page.waitForTimeout(2000);
 }
 
-async function waitUntilElementExist(page: puppeteer.Page, xpath: string, retryCallback) {
+async function waitUntilElementExist(page: puppeteer.Page, xpath: string, retryCallback = undefined) {
     while ((await page.$x(xpath)) [0] == undefined) {
-        await retryCallback()
+        if (retryCallback) {
+            await retryCallback()
+        }
     }
 
 }
@@ -100,9 +102,8 @@ class Bot {
         await this.metamask.confirmTransaction()
         //Bug in the library, temporary fix buy click confirm again
         const metamaskPage = this.metamask.page
-        await metamaskPage.waitForXPath("//footer/button[text()='Confirm'][not(@disabled)]")
-
         const approveTransactionXpath = "//footer/button[text()='Confirm'][not(@disabled)]"
+        await waitUntilElementExist(metamaskPage, approveTransactionXpath,bringToFrontCallback.bind(metamaskPage))
         const approveTransactionButton = (await metamaskPage.$x(approveTransactionXpath))[0];
         // await sleep(1000);
         this.setLastStep('Try to click confirm again as a bug in library')
@@ -110,7 +111,7 @@ class Bot {
     }
 
     async build() {
-        this.isExistProfile= fs.existsSync(this.profile)
+        this.isExistProfile = fs.existsSync(this.profile)
         this.browser = await dappeteer.launch(puppeteer, {
             metamaskVersion: 'v10.1.1',
             userDataDir: this.profile,
