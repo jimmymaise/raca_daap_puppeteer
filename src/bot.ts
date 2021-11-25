@@ -1,5 +1,6 @@
 import * as puppeteer from 'puppeteer';
 import * as dappeteer from '@chainsafe/dappeteer';
+import { time } from 'console';
 
 const fs = require('fs');
 
@@ -115,9 +116,9 @@ class Bot {
         this.browser = await dappeteer.launch(puppeteer, {
             metamaskVersion: 'v10.1.1',
             userDataDir: this.profile,
-            args: [
-                '--start-maximized' // you can also use '--start-fullscreen'
-            ]
+            // args: [
+            //     '--start-maximized' // you can also use '--start-fullscreen'
+            // ]
         });
         return this
     }
@@ -138,7 +139,7 @@ class Bot {
 
         if (this.isExistProfile) {
             //Wait for meta mask windows display
-            await sleep(4000);
+            await sleep(3000);
             metamask = await dappeteer.getMetamaskWindow(browser);
             this.metamask = metamask
             let pages = await browser.pages()
@@ -167,6 +168,7 @@ class Bot {
         await page.goto('https://market.radiocaca.com/#/market-place');
         let text = await getTextFromElementXpath(page, "//span[contains(@class,'accountInfo')]//text()")
         const isNeedConnectWallet = (text == 'Connect Wallet')
+        await sleep(1000);
         if (isNeedConnectWallet) {
             this.setLastStep('Try to connect wallet')
 
