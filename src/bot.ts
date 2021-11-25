@@ -196,11 +196,12 @@ class Bot {
             const approveRacaXpath = "//button[not(contains(@class,'disabled-btn'))]/span[text()='Approve Raca']/.."
             await page.waitForXPath(approveRacaXpath)
             const approveRacaButton = (await page.$x(approveRacaXpath))[0]
+            await sleep(1000);
             await tryClick(page, approveRacaButton, bringToFrontCallback.bind(page))
             this.setLastStep('Clicked approve raca button')
             await this.metaMaskConfirm()
-
             this.setLastStep('Confirm successfully')
+            await page.bringToFront()
             //Check until approve Buy now Enable
             await waitUntilElementExist(page, newBuyNowXpath, bringToFrontCallback.bind(page))
             newBuyNowButton = (await page.$x(newBuyNowXpath))[0]
@@ -225,6 +226,7 @@ class Bot {
             this.getErrorAfterConfirmBuying(page)]);
 
         await sleep(4000);
+        await page.bringToFront()
         await browser.close()
         return true
     }
