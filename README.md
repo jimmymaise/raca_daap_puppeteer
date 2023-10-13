@@ -1,28 +1,44 @@
-# Requirements
-* Execute the latest RACA NFT purchase order
-* Avoid Rate limit and bot detection 100%
+# RACA NFT Automation: A Side Project Overview
 
-# Prequisites
-* pupeeter with metamask plugin installed
-* Multiple Metamask wallets with sufficient BNB for BSC transaction fee and RACA balance to purchase NFT
-* Use different IPaddresses when invoking the RACA endpoints
+This repository hosts a side project dedicated to automating interactions with MetaMask and the RACA marketplace for buying and selling NFTs. This project was born out of the need to streamline the purchasing process, efficiently bypass rate limits, and securely manage transactions.
 
-### Security requirement ###
-* Secure the 12 words of metamask secret. The AWS KMS for encryption can be used. However, Local encryption can be used
+## Features
 
-### Improvements ###
-* Reduce the loading time and minimise the metamask wallet configuration time
-* Track and visualise the fluctuation price of NFT items
+- **Automated RACA NFT Purchase**: Executes the latest RACA NFT purchase orders automatically.
+- **Anti-Bot & Rate Limit Countermeasures**: Designed to avoid 100% rate limit and bot detection.
 
-# Diagram
+## Requirements
 
-![Dapp_raca_diagram](./img/dapp_raca.drawio.png)
+### Software and Wallets
 
-**RACA endpoints:**
+- Puppeteer with MetaMask plugin installed
+- Multiple MetaMask wallets
+  - Ensure sufficient BNB for BSC transaction fees
+  - Maintain RACA balance for NFT purchases
+- Different IP addresses for invoking RACA endpoints
 
-                https://market.radiocaca.com/#/market-place
-                https://market.radiocaca.com/#/market-place/[item]
+### Security Measures
 
-# Release Update
+- Safeguard the 12-word secret phrase for MetaMask.
+  - AWS KMS can be used for encryption.
+  - Local encryption methods are also acceptable.
 
-* MVP
+## Future Improvements
+
+- **Efficiency Optimization**: Reduce the loading and MetaMask wallet configuration time.
+- **Data Visualization**: Implement features to track and visualize NFT price fluctuations.
+
+## Architecture Diagram
+
+![Dapp RACA Architecture](./img/dapp_raca.drawio.png)
+
+## RACA Endpoints
+
+- Marketplace: `https://market.radiocaca.com/#/market-place`
+- Specific Item: `https://market.radiocaca.com/#/market-place/[item]`
+
+## Release History
+
+- Initial release: MVP
+
+Feel free to contribute or raise issues if you find any. Thank you for visiting this project!
