@@ -1,6 +1,6 @@
 # RACA NFT Automation: A Side Project Overview
 
-This repository hosts a side project dedicated to automating interactions with MetaMask and the RACA marketplace for buying and selling NFTs. This project was born out of the need to streamline the purchasing process, efficiently bypass rate limits, and securely manage transactions.
+This codebase serves as a side endeavor aimed at automating transactions with MetaMask and the RACA marketplace, specifically for the buying and selling of NFTs. Created in 2021 during a partnership with a friend, the project emerged as a solution to simplify the buying experience, effectively circumvent rate restrictions, and handle transactions securely.
 
 ## Features
 
